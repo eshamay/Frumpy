@@ -12,21 +12,31 @@ namespace music {
 	class MusicElement {
 		protected:
 			element_id_t id;
+			std::string text;
+
 		public:
+			MusicElement (std::string t) : text(t) { ++num_music_elements; }
+			~MusicElement () { num_music_elements--; }
+
+			static unsigned int num_music_elements;
 			element_id_t ID () const { return id; }
 	};
 
-	/// Interface for elements that involve multiple notes
-	class INoteList {
+
+	/*! Interface for element containers */
+	class IMusicElementList {
 		public:
-			typedef std::list<Note> note_list;
-			note_list::iterator notes_begin () const { return notes.begin(); }
-			note_list::iterator notes_end () const { return notes.end(); }
+			typedef std::list<MusicElement> element_list;
+			note_list::iterator elements_begin () const { return elements.begin(); }
+			note_list::iterator elements_end () const { return elements.end(); }
 
 		protected:
-			note_list notes;
+			element_list elements;
 	};
 			 
+
+	class Measure : public IMusicElementList {
+	};
 
 	class Note : public MusicElement {
 		protected:
@@ -39,10 +49,22 @@ namespace music {
 			unsigned int duration;
 	};
 
-	class Tie : public MusicElement, public INoteList {
+	class Tie : public MusicElement {
 	};
 
-	class Slur : public MusicElement, public INoteList {
+	class Slur : public MusicElement {
+	};
+
+	typedef enum {
+		SingleBar, DoubleBar, 
+		RepeatBackBar, RepeatBackForwardBar, RepeatForwardBar
+	} bar_t;
+
+	class Bar : public MusicElement {
+		protected:
+			bar_t bartype;
+		public:
+			bar_t type () const { return bartype; }
 	};
 
 } // namespace music
