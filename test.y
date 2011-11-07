@@ -1,86 +1,107 @@
 %{
-#include <cstdio>
-#include <iostream>
-#include <cstdlib>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+//#define YYSTYPE char *
 
-using namespace std;
-
-// stuff from flex that bison needs to know about:
-extern "C" int yylex();
-extern "C" int yyparse();
-extern "C" FILE *yyin;
  
-void yyerror(const char *str);
-	//fprintf(stderr,"error: %s\n",str);
-//}
+void yyerror(const char *str) {
+	fprintf(stderr,"error: %s\n",str);
+}
 
-int yywrap() {
-	return 1;
-} 
+int yywrap() { return 1; } 
 
-
-//main() {
-	//yyparse();
-//} 
+main() { while(1) yyparse(); } 
 
 %}
 
+%token SEMICOLON FIELD_NUMBER FIELD_TITLE FIELD_AREA FIELD_BOOK FIELD_COMPOSER FIELD_DISCOGRAPHY FIELD_GROUP FIELD_HISTORY FIELD_INFORMATION FIELD_DEFAULT_LENGTH FIELD_METER FIELD_NOTES FIELD_ORIGIN FIELD_PARTS FIELD_TEMPO FIELD_RHYTHM FIELD_SOURCE FIELD_TRANSCRIPTION FIELD_KEY 
 
-// Bison fundamentally works by asking flex to get the next token, which it
-// returns as an object of type "yystype".  But tokens could be of any
-// arbitrary data type!  So we deal with that in Bison by defining a C union
-// holding each of the types of tokens that Flex could return, and have Bison
-// use that union instead of "int" for the definition of "yystype":
-%union {
-	int ival;
-	float fval;
-	char *sval;
+%union 
+{
+	int number;
+	char *string;
 }
 
-// define the "terminal symbol" token types I'm going to use (in CAPS
-// by convention), and associate each with a field of the union:
-%token <sval> FIELD
-%token <sval> ACCIDENTAL
-%token <sval> BAR
-%token <sval> NOTE
-%token <ival> INT
-%token <sval> STRING
-
+%token <number> NUMBER 
+%token <string> STRING 
+%token <string> FIELD 
+%token <string> ACCIDENTAL 
 
 %%
 
-fields:	
-			/* empty */
-	|
-			FIELD STRING 
-			{
-				printf ("field: %s %s\n", $1, $2);
-			}
-	;
+abctune: abc_header
+;
 
-%%
+abc_header: FIELD_NUMBER NUMBER title_fields fields { 
+						printf ("field number = %d\n", $2); }
+					| title_fields fields
+					| fields 
+;
+					
+title_fields: STRING eol {
+						printf ("title = %s\n", $1); }
+;
 
-main(int argc, char **argv) {
-	// open a file handle to a particular file:
-	FILE *myfile = fopen(argv[1], "r");
-	// make sure it's valid:
-	if (!myfile) {
-		cout << "I can't open a.snazzle.file!" << endl;
-		return -1;
-	}
-	// set flex to read from it instead of defaulting to STDIN:
-	yyin = myfile;
+eol: '\n'
+;
 
-// parse through the input until there is no more:
-	do {
-		yyparse();
-	} while (!feof(yyin));
+fields: /* empty */ | fields field
+;
 
-}
+field:
+	FIELD_NUMBER NUMBER eol { printf ("field number = %d\n", $2); }
+	| FIELD_TITLE STRING eol
+	| FIELD_AREA STRING eol
+	| FIELD_BOOK STRING eol
+	| FIELD_COMPOSER STRING eol
+	| FIELD_DISCOGRAPHY STRING eol
+	| FIELD_GROUP STRING eol
+	| FIELD_HISTORY STRING eol
+	| FIELD_DEFAULT_LENGTH note_length eol
+	| FIELD_METER meter eol
+	| FIELD_NOTES STRING eol
+	| FIELD_ORIGIN STRING eol
+	| FIELD_PARTS STRING eol
+	| FIELD_TEMPO tempo eol
+	| FIELD_RHYTHM STRING eol
+	| FIELD_SOURCE STRING eol
+	| FIELD_TRANSCRIPTION STRING eol
+	| FIELD_KEY key eol
+;
 
-void yyerror(const char *s) {
-	cout << "EEK, parse error!  Message: " << s << endl;
-	// might as well halt now:
-	exit(-1);
-}
+key: key_spec | "HP" | "Hp"
+	 ;
+
+key_spec: keynote mode_spec ' ' global_accidental | keynote ' ' global_accidental
+;
+
+keynote: basenote key_accidental | basenote
+;
+
+key_accidental: '#' | 'b'
+							;
+meter: 'C|' | meter_fraction
+		 ;
+meter_fraction: NUMBER '/' NUMBER
+						 ;
+mode_spec: ' ' mode | mode
+				 ;
+mode: mode_minor
+		;
+mode_minor: 'm' | 'M'
+					;
+note_length_strict: NUMBER '/' NUMBER
+									;
+note_length: NUMBER '/' NUMBER | NUMBER 
+					 ;
+
+global_accidental: accidental basenote
+								 ;
+basenote: 'C' | 'D' | 'E' | 'F' | 'G' | 'A' | 'B' | 'c' | 'd' | 'e' | 'f' | 'g' | 'a' | 'b'
+				;
+accidental: ACCIDENTAL
+tempo: NUMBER | 'C' NUMBER '=' NUMBER | 'C' '=' NUMBER | note_length_strict '=' NUMBER
+		 ;
+
 
