@@ -25,7 +25,7 @@ def main(sourceText):
 	S = Scanner.Scanner(sourceText)
 
 	#------------------------------------------------------------------
-	# Call the scanner's get() method repeatedly
+	# Iterate through the scanner input
 	# to get the characters in the sourceText.
 	# Stop when we reach the ENDMARK.
 	#------------------------------------------------------------------
